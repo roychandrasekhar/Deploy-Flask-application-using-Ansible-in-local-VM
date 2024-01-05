@@ -1,0 +1,29 @@
+    - name: Install and Configure Database
+      apt: name={{ item }} state=present
+      with_items:
+        - mysql-server 
+        - mysql-client
+        
+    - name: Start MySQL service
+      service: 
+        name: mysql
+        state: started
+        enabled: yes
+        
+    - name: Create Application Database
+      mysql_db: name='{{ db_name }}' state=present
+      
+    - name: Create Database User
+      mysql_user:
+        name: '{{ db_user }}'
+        password: '{{ db_pass }}'
+        priv: '*.*:All'
+        state: present
+
+    # - name: Execute MySQL query
+      # mysql_db:
+        # login_unix_socket: /var/run/mysqld/mysqld.sock
+        # login_user: db_user
+        # login_password: Passw0rd
+        # login_db: employee_db
+        # query: "INSERT INTO employees VALUES ('JOHN');"
