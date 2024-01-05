@@ -51,10 +51,10 @@
     
     I re-confirm by by `ssh root@172.17.0.2` without giving password.
 
-    Create a new file in your home directory name `inventory.txt` and put this worker ip address, e.g.
+    Create a new file in your home directory name `inventory.txt`, e.g.
         
-        db_and_web_server1 ansible_host=192.168.50.11
-        db_and_web_server2 ansible_host=192.168.50.12
+        db_and_web_server1 
+        db_and_web_server2 
 
     Now create the playbook.yml file
     
@@ -62,6 +62,7 @@
         - name: Deploy a web application
           hosts: db_and_web_server1,db_and_web_server2
           become: yes
+
           tasks:
             - name: Upgrade pip
               pip:
@@ -78,48 +79,58 @@
                 - python-pip 
                 - python-mysqldb
 
-            - name: Install and Configure Database
-              apt: name={{ item }} state=present
-              with_items:
-                - mysql-server 
-                - mysql-client
-
-            - name: Start MySQL service
-              service: 
-                name: mysql
-                state: started
-                enabled: yes
-
-            - name: Create Application Database
-              mysql_db: name=employee_db state=present
-
-            - name: Create Database User
-              mysql_user:
-                name: db_user
-                password: Passw0rd
-                priv: '*.*:All'
-                state: present
-
-            # - name: Execute MySQL query
-              # mysql_db:
-                # login_unix_socket: /var/run/mysqld/mysqld.sock
-                # login_user: db_user
-                # login_password: Passw0rd
-                # login_db: employee_db
-                # query: "INSERT INTO employees VALUES ('JOHN');"
-
-            - name: Install Python Flask dependency
-              pip: name={{ item }} state=present
-              with_items:
-                - flask 
-                - flask-mysql 
-
-            - name: Copy Source code
-              copy: src=app.py dest=/opt/app.py
-
-            - name: Start web server
-              shell: "cd /opt && FLASK_APP=app.py nohup flask run --host=0.0.0.0 --port=5000 > /var/log/flask.log 2>&1 &"
+            - include: tasks/deploy_db.yml
+            - include: tasks/deploy_web.yml
     ```
+
+    Now create the deploy_db.yml file  ***(make sure you keep the same alignment)*
+    ```yml
+        - name: Install and Configure Database
+          apt: name={{ item }} state=present
+          with_items:
+            - mysql-server 
+            - mysql-client
+
+        - name: Start MySQL service
+          service: 
+            name: mysql
+            state: started
+            enabled: yes
+
+        - name: Create Application Database
+          mysql_db: name='{{ db_name }}' state=present
+
+        - name: Create Database User
+          mysql_user:
+            name: '{{ db_user }}'
+            password: '{{ db_pass }}'
+            priv: '*.*:All'
+            state: present
+
+        # - name: Execute MySQL query
+          # mysql_db:
+            # login_unix_socket: /var/run/mysqld/mysqld.sock
+            # login_user: db_user
+            # login_password: Passw0rd
+            # login_db: employee_db
+            # query: "INSERT INTO employees VALUES ('JOHN');"
+    ```
+    
+    Now create the deploy_db.yml file ***(make sure you keep the same alignment)*
+    ```yml
+        - name: Install Python Flask dependency
+          pip: name={{ item }} state=present
+          with_items:
+            - flask 
+            - flask-mysql 
+
+        - name: Copy Source code
+          copy: src=app.py dest=/opt/app.py
+
+        - name: Start web server
+          shell: "cd /opt && FLASK_APP=app.py nohup flask run --host=0.0.0.0 --port=5000 > /var/log/flask.log 2>&1 &"
+    ```
+    Also create the `host_vars` files as given in the source. We can use the group vars but here i use the host specific vars
 
 7. Now run the ansible command as below
     `ansible-playbook playbook.yml -i inventory.txt`
