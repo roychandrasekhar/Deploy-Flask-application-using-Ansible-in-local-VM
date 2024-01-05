@@ -59,28 +59,28 @@
     Now create the playbook.yml file
     
     ```yml
-        - name: Deploy a web application
-          hosts: db_and_web_server1,db_and_web_server2
-          become: yes
+    - name: Deploy a web application
+      hosts: db_and_web_server1,db_and_web_server2
+      become: yes
 
-          tasks:
-            - name: Upgrade pip
-              pip:
-                name: pip
-                extra_args: --upgrade
+      tasks:
+        - name: Upgrade pip
+          pip:
+            name: pip
+            extra_args: --upgrade
 
-            - name: Install all required dependencies
-              apt: name={{ item }} state=present
-              with_items:
-                - python 
-                - python-setuptools 
-                - python-dev 
-                - build-essential 
-                - python-pip 
-                - python-mysqldb
+        - name: Install all required dependencies
+          apt: name={{ item }} state=present
+          with_items:
+            - python 
+            - python-setuptools 
+            - python-dev 
+            - build-essential 
+            - python-pip 
+            - python-mysqldb
 
-            - include: tasks/deploy_db.yml
-            - include: tasks/deploy_web.yml
+        - include: tasks/deploy_db.yml
+        - include: tasks/deploy_web.yml
     ```
 
     Now create the deploy_db.yml file  ***(make sure you keep the same alignment)*
